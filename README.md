@@ -1,5 +1,5 @@
 # ot-tempdeck-control
-This is a lightweight Python driver and command-line tool for controlling the Opentrons Tempdeck.
+This is a lightweight Python driver and command-line tool for controlling the Opentrons Temperature Module ("Tempdeck").
 
 This project is not affiliated with Opentrons.
 
