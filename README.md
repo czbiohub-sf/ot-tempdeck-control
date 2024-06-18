@@ -1,5 +1,5 @@
 # ot-tempdeck-control
-This is a lightweight Python driver and command-line tool for controlling the Opentrons Temperature Module ("Tempdeck").
+This is a simple Python library and command-line tool for controlling an Opentrons Temperature Module ("Tempdeck"), for situations where it is desireable to run a Tempdeck as a standalone instrument without a robot or the Opentrons software stack.
 
 This project is not affiliated with Opentrons.
 
@@ -13,10 +13,10 @@ The `ot_tempdeck` package requires:
 - Python >= 3.6
 - `pyserial` >= 3.5 (earlier versions may work, not tested).
 
-Building the docs requires `sphinx`.
+Building the docs additionally requires `sphinx`.
 
 ## Installation
-Activate a virtual environment if desired, then, from the root of this distribution, run:
+Activate a virtual environment if desired, then, from the root of this source distribution, run:
 ```
 pip install .
 ```
@@ -30,7 +30,7 @@ Open `docs/html/_build/index.html` in a web browser to view the API documentatio
 Other formats are available as well; run `make` with no arguments for a list.
 
 ## API usage
-Refer to the docstrings or compiled documentation for full API usage information with examples. The examples from the documentation can also be found in `docs/usage_example.py`.
+Refer to the docstrings or compiled documentation for full API usage information with examples. The content of the usage example in the documentation can also be found in `docs/usage_example.py`.
 
 ## Command line tool
 This package provides the `tempdeck-ctrl` command. Usage is shown below.
