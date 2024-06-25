@@ -6,9 +6,6 @@ import serial.tools.list_ports
 from .types import *
 
 
-__all__ = ["TempdeckControl"]
-
-
 class TempdeckControl:
     """Driver for communicating with an Opentrons Tempdeck"""
 

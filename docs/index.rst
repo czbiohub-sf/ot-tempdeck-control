@@ -5,7 +5,6 @@ Driver class
 ------------
 .. autoclass:: ot_tempdeck.TempdeckControl
    :members: __init__, list_connected_devices, open_first_device, from_serial_portname, set_target_temp, get_temps, get_target_temp, get_current_temp, deactivate
-   :undoc-members:
    :member-order: bysource
 
 Exceptions
