@@ -36,19 +36,21 @@ Refer to the docstrings or compiled documentation for full API usage information
 This package provides the `tempdeck-ctrl` command. Usage is shown below.
 ```
 $ tempdeck-ctrl -h
-usage: tempdeck-ctrl [-h] [-p PORTNAME] [-l | -t TEMP | -i | -d]
+usage: tempdeck-ctrl.py [-h] [-p PORTNAME | -u LOCATION] [-l | -t TEMP | -i | -d]
 
 optional arguments:
   -h, --help            show this help message and exit
   -p PORTNAME, --port PORTNAME
-                        Use serial port identified by PORTNAME (if not specified, connect to the first tempdeck found)
-  -l, --list-devices    List port names for connected tempdecks
+                        Use serial port identified by PORTNAME
+  -u LOCATION, --usb LOCATION
+                        Select device according to USB port location string
+  -l, --list-devices    List detected tempdecks
   -t TEMP, --set-target TEMP
                         Activate temperature control and set target to TEMP (in °C)
   -i, --prompt-target   Prompt for target temperature and then set it
   -d, --deactivate      Deactivate temperature control
 
-If no action specified, read back current temperature values
+If no action specified, print device info and current temperature values
 ```
 
 For further information and examples, see the documentation.
