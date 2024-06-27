@@ -1,4 +1,5 @@
-from typing import List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 
 import serial
 import serial.tools.list_ports
@@ -91,6 +92,23 @@ class TempdeckControl:
                 raise self.InvalidResponse(
                     f"Unexpected response when we expected 'ok': {line!r}")
 
+    def _ask(self, cmd: str, types: Optional[Dict[str, Callable]] = None
+             ) -> Tuple[Dict[str, Any], str]:
+        self._send_command(cmd)
+        types = dict(types or ())
+        response = self._read_line().strip()
+        self._wait_for_ack()
+        info = {}
+        for piece in response.split():
+            try:
+                left, right = piece.split(":", 1)
+                info[left] = types.get(left, str)(right)
+            except ValueError as e:
+                raise self.InvalidResponse(
+                    f"Couldn't parse this part: {piece!r} -- "
+                    f"full response was {response!r}"
+                    ) from e
+        return info, response
     def set_target_temp(self, temp: float):
         """
         Set the Tempdeck's target temperature to the supplied value and
@@ -115,30 +133,14 @@ class TempdeckControl:
 
         :raises ResponseTimeout, InvalidResponse: see class descriptions
         """
-        self._send_command(f"M105")
-        response = self._read_line().strip()
-        target_temp = None
-        current_temp = None
-        tokens = response.split()
-        try:
-            for token in tokens:
-                left, right = token.split(":", 1)
-                if left == "C":
-                    current_temp = float(right)
-                elif left == "T":
-                    target_temp = float(right) if right != "none" else right
-        except ValueError as e:
-            raise self.InvalidResponse(
-                f"Error parsing response: {response!r}"
-                ) from e
-        for var_name in ['target_temp', 'current_temp']:
-            if locals()[var_name] is None:
+        float_or_none = lambda x: None if x == "none" else float(x)
+        info, response = self._ask(
+            "M105", types={'C': float, 'T': float_or_none})
+        for key, desc in [('C', "current temp"), ('T', "target temp")]:
+            if key not in info:
                 raise self.InvalidResponse(
-                    f"Response missing value for {var_name.replace('_', ' ')}:"
-                    + repr(response)
-                    )
-        self._wait_for_ack()
-        return (target_temp if target_temp != "none" else None, current_temp)
+                    f"Response missing value for {desc}: {response!r}")
+        return info['T'], info['C']  # (target temp, current temp)
 
     def get_target_temp(self) -> Optional[float]:
         """
