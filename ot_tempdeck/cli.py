@@ -9,7 +9,10 @@ from . import TempdeckControl
 
 def parse_cli_args(argv_rh: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        epilog="If no action specified, read back current temperature values"
+        epilog=(
+            "If no action specified, print device info and current "
+            "temperature values"
+            )
         )
     devselect_group = parser.add_mutually_exclusive_group()
     devselect_group.add_argument(
@@ -91,14 +94,17 @@ def cli_main(argv_rh: List[str]) -> int:
         print("Temperature control deactivated")
     else:
         target_temp, current_temp = td.get_temps()
+        print(f"Port:      {td.ser_port.port}")
+        print(f"Model:     {td.model_name}")
+        print(f"Serial no: {td.serial_no}")
         print(
-            "Target:  " + (
+            "Target:    " + (
                 f"{target_temp:.2f} °C"
                 if target_temp is not None
                 else "(deactivated)"
                 )
             )
-        print(f"Current: {current_temp:.2f} °C")
+        print(f"Current:   {current_temp:.2f} °C")
     return 0
 
 
