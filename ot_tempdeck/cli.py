@@ -11,19 +11,22 @@ def parse_cli_args(argv_rh: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         epilog="If no action specified, read back current temperature values"
         )
-    parser.add_argument(
+    devselect_group = parser.add_mutually_exclusive_group()
+    devselect_group.add_argument(
         "-p", "--port",
         metavar="PORTNAME",
-        help=(
-            "Use serial port identified by PORTNAME "
-            "(if not specified, connect to the first tempdeck found)"
-            )
+        help="Use serial port identified by PORTNAME"
+        )
+    devselect_group.add_argument(
+        "-u", "--usb",
+        metavar="LOCATION",
+        help="Select device according to USB port location string"
         )
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument(
         "-l", "--list-devices",
         action='store_true',
-        help="List port names for connected tempdecks"
+        help="List detected tempdecks"
         )
     action_group.add_argument(
         "-t", "--set-target",
@@ -47,22 +50,26 @@ def parse_cli_args(argv_rh: List[str]) -> argparse.Namespace:
 def cli_main(argv_rh: List[str]) -> int:
     args = parse_cli_args(argv_rh)
     if args.list_devices:
-        print("Found tempdecks on these ports:", file=sys.stderr)
-        for portname in TempdeckControl.list_connected_devices():
-            print(portname)
+        print(
+            "Found tempdecks on these ports (serial port name, USB location):",
+            file=sys.stderr
+            )
+        for portname, location in TempdeckControl.list_connected_devices():
+            print(f"{portname}, {location}")
         return 0
-    if args.port:
-        try:
+    try:
+        if args.port:
             td = TempdeckControl.from_serial_portname(args.port)
-        except serial.serialutil.SerialException as e:
-            print(f"Couldn't open port {args.port!r}: {e}", file=sys.stderr)
-            return 1
-    else:
-        try:
+        elif args.usb:
+            td = TempdeckControl.from_usb_location(args.usb)
+        else:
             td = TempdeckControl.open_first_device()
-        except TempdeckControl.DeviceNotFound:
-            print("No tempdeck connected?", file=sys.stderr)
-            return 1
+    except TempdeckControl.DeviceNotFound as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    except serial.serialutil.SerialException as e:
+        print(f"Couldn't open port {args.port!r}: {e}", file=sys.stderr)
+        return 1
     target_temp = None
     deactivate = False
     if args.prompt_target:

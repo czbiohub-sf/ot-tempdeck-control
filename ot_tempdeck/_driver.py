@@ -15,8 +15,9 @@ class TempdeckControl:
     InvalidResponse = InvalidResponse
     ResponseTimeout = ResponseTimeout
 
-    USB_VID = 0x04d8
-    USB_PID = 0xee93
+    USB_HW_IDS = [
+        (0x04d8, 0xee93),
+        ]
 
     def __init__(self, ser_port: serial.Serial):
         """
@@ -29,19 +30,55 @@ class TempdeckControl:
         self._populate_device_info()
 
     @classmethod
-    def open_first_device(cls, *args, **kwargs) -> 'TempdeckControl':
+    def open_first_device(
+            cls,
+            usb_vidpid: Optional[Tuple[int, int]] = None,
+            **kwargs) -> 'TempdeckControl':
         """
         Look for any connected Tempdecks (see :meth:`list_connected_devices`)
         and open the first one found.
 
+        :param usb_vidpid: A tuple ``(vid, pid)`` specifying a particular
+            USB vendor and product ID to look for instead of using the standard
+            values.
+        :param kwargs: keyword arguments to pass to :meth:`__init__`
         :raises DeviceNotFound: If no tempdecks were found
         :raises serial.SerialException: If something went wrong opening the
             serial device
         """
-        portnames = cls.list_connected_devices()
-        if not portnames:
-            raise cls.DeviceNotFound("No tempdeck detected")
-        return cls.from_serial_portname(portnames[0])
+        dev_list = cls.list_connected_devices(usb_vidpid=usb_vidpid)
+        if not dev_list:
+            raise cls.DeviceNotFound("No Tempdecks found")
+        return cls.from_serial_portname(dev_list[0][0], **kwargs)
+
+    @classmethod
+    def from_usb_location(
+            cls,
+            location: str,
+            usb_vidpid: Optional[Tuple[int, int]] = None,
+            **kwargs) -> 'TempdeckControl':
+        """
+        Connects to a Tempdeck at a specific USB port.
+
+        :param location: A string representing the USB port location, as
+            obtained from :meth:`list_connected_devices`
+        :param usb_vidpid: A tuple ``(vid, pid)`` specifying a particular
+            USB vendor and product ID to look for instead of using the standard
+            values
+        :param kwargs: keyword arguments to pass to :meth:`__init__`
+        :raises DeviceNotFound: If no Tempdeck was detected with a matching USB
+            location string
+        :raises serial.SerialException: If something went wrong opening the
+            serial device
+
+        (also see exceptions raised by :meth:`__init__`)
+        """
+        for portname, location_ in cls.list_connected_devices(
+                usb_vidpid=usb_vidpid):
+            if location_ == location:
+                return cls.from_serial_portname(portname, **kwargs)
+        raise cls.DeviceNotFound(
+            f"No Tempdeck detected at USB location {location!r}")
 
     @classmethod
     def from_serial_portname(cls, portname: str, *args, **kwargs
@@ -61,21 +98,36 @@ class TempdeckControl:
         return cls(ser_port, *args, **kwargs)
 
     @classmethod
-    def list_connected_devices(cls) -> List[str]:
+    def list_connected_devices(
+            cls, usb_vidpid: Optional[Tuple[int, int]] = None
+            ) -> List[Tuple[str, str]]:
         """
-        Get a list of serial port names corresponding to Opentrons Tempdecks.
-        Checks for virtual serial ports corresponding to USB devices with the
-        appropriate VID/PID.
+        Get a list of all Tempdecks currently connected via USB. Detection is
+        based on the USB vendor/product ID values reported by the OS. This
+        method does not attempt to open the devices or verify that they are
+        actually accessible.
 
         Only supported on Windows, macOS and Linux.
 
-        :returns: A list of serial port device names
-            (naming convention is platform-dependent)
+        :param usb_vidpid: A tuple ``(vid, pid)`` specifying a particular
+            USB vendor and product ID to look for instead of the standard
+            values.
+        :returns: A list of tuples ``(portname, location)`` where ``portname``
+            the name of a logical serial port (e.g. ``"COM42"`` or
+            ``"/dev/ttyACM0"``) as recognized by pySerial and ``location`` is
+            a string representing which actual USB port the Tempdeck is
+            connected to. The latter is useful for connecting to a specific
+            Tempdeck (see :meth:`from_usb_location`) since they don't expose a
+            serial number via USB descriptors.
         """
+        usb_vidpids = (
+            [tuple(usb_vidpid)] if usb_vidpid is not None
+            else cls.USB_HW_IDS
+            )
         return [
-            info.device
+            (info.device, info.location)
             for info in serial.tools.list_ports.comports()
-            if info.vid == cls.USB_VID and info.pid == cls.USB_PID
+            if (info.vid, info.pid) in usb_vidpids
             ]
 
     def _send_command(self, cmd: str):
