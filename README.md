@@ -56,4 +56,4 @@ For further information and examples, see the documentation.
 To use the command line tool without installing the package, you can run `python tempdeck-ctrl.py` from the root of this distribution.
 
 ## Support
-This repository is maintained by Greg Courville of the Bioengineering Platform of Chan Zuckerberg Biohub San Francisco.
+This repository is maintained by Greg Courville of the Bioengineering Platform at Chan Zuckerberg Biohub San Francisco.
