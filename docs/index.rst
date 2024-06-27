@@ -4,7 +4,7 @@
 Driver class
 ------------
 .. autoclass:: ot_tempdeck.TempdeckControl
-   :members: __init__, list_connected_devices, open_first_device, from_serial_portname, set_target_temp, get_temps, get_target_temp, get_current_temp, deactivate
+   :members: __init__, list_connected_devices, open_first_device, from_serial_portname, from_usb_location, set_target_temp, get_temps, get_target_temp, get_current_temp, deactivate, model_name, serial_no, fw_version
    :member-order: bysource
 
 Exceptions
@@ -41,7 +41,7 @@ A script file ``tempdeck-ctrl.py`` is also provided in the top-level directory o
 
 Actions
 ^^^^^^^
-The default action if none of the following flags are given is to read back and print the current measured and target temperatures. The following additional actions are available:
+The default action if none of the following flags are given is to read back and print the current measured and target temperatures along with information about the device. The following additional actions are available:
 
 .. option:: -h, --help
 
@@ -49,7 +49,7 @@ The default action if none of the following flags are given is to read back and 
 
 .. option:: -l, --list-devices
 
-   Print a list of serial ports on which Tempdecks were detected (see :py:meth:`ot_tempdeck.TempdeckControl.list_connected_devices()`).
+   Print a list of serial ports and corresponding USB port locations on which Tempdecks were detected (see :py:meth:`ot_tempdeck.TempdeckControl.list_connected_devices()`).
 
 .. option:: -t TEMP, --set-target TEMP
 
@@ -61,7 +61,7 @@ The default action if none of the following flags are given is to read back and 
 
 .. option:: -i
 
-   "Interactive mode" -- prompt for a new target temperature (or the word "off") and then set the target temperature or deactivate the tempdeck accordingly.
+   "Interactive mode" -- prompt for a new target temperature (or the word "off") and then set the target temperature or deactivate the tempdeck accordingly and exit.
 
 Configuration options
 ^^^^^^^^^^^^^^^^^^^^^
@@ -70,22 +70,29 @@ Configuration options
 
    Specify the serial port to connect to. If a port is not specified, the first detected tempdeck will be used.
 
+.. option:: -u LOCATION, --usb LOCATION
+
+   Use the tempdeck connected to the USB port at LOCATION
+
 Examples
 --------
 Show devices currently connected: ::
 
    $ tempdeck-ctrl -l
-   Found tempdecks on these ports:
-   COM6
-   COM9
+   Found tempdecks on these ports (serial port name, USB location):
+   COM5, 1-3.3
+   COM9, 1-4:x.0
 
 Get current temperature values: ::
 
    $ tempdeck-ctrl -p COM9
-   Target:  (deactivated)
-   Current: 25.55 °C
+   Port:      COM9
+   Model:     temp_deck_v4.0
+   Serial no: TDV04P20770101B04
+   Target:    (deactivated)
+   Current:   22.56 °C
 
-If only one tempdeck is connected, you can omit the :option:`-p` option, as in the remaining examples below.
+If only one tempdeck is connected, you can omit the :option:`-p` and :option:`-u` options, as in the remaining examples below.
 
 Activate tempdeck and set target to 42.3°C: ::
 
@@ -95,6 +102,9 @@ Activate tempdeck and set target to 42.3°C: ::
 Check temperature values while tempdeck is heating up: ::
 
    $ tempdeck-ctrl
+   Port:      COM9
+   Model:     temp_deck_v4.0
+   Serial no: TDV04P20770101B04
    Target:  42.30 °C
    Current: 32.18 °C
 
