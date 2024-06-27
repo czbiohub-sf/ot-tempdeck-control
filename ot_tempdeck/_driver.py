@@ -23,8 +23,10 @@ class TempdeckControl:
         :param ser_port: a ``serial.Serial`` instance (or other object with a
             compatible interface) that will be used to communicate with the
             Tempdeck
+        :raises ResponseTimeout, InvalidResponse: see class descriptions
         """
         self.ser_port = ser_port
+        self._populate_device_info()
 
     @classmethod
     def open_first_device(cls, *args, **kwargs) -> 'TempdeckControl':
@@ -109,6 +111,17 @@ class TempdeckControl:
                     f"full response was {response!r}"
                     ) from e
         return info, response
+
+    def _populate_device_info(self) -> Dict[str, str]:
+        info, response = self._ask("M115")
+        for key in ['model', 'serial', 'version']:
+            if key not in info:
+                raise self.InvalidResponse(
+                    f"Response missing value for {key}: {response!r}")
+        self._model_name = info['model']
+        self._serial_no = info['serial']
+        self._fw_version = info['version']
+
     def set_target_temp(self, temp: float):
         """
         Set the Tempdeck's target temperature to the supplied value and
@@ -178,3 +191,18 @@ class TempdeckControl:
         :raises ResponseTimeout, InvalidResponse: see class descriptions
         """
         self._send_command("M18")
+
+    @property
+    def model_name(self) -> str:
+        """Model name reported by the Tempdeck"""
+        return self._model_name
+
+    @property
+    def serial_no(self) -> str:
+        """Serial number reported by the Tempdeck"""
+        return self._serial_no
+
+    @property
+    def fw_version(self) -> str:
+        """Firmware version reported by the Tempdeck"""
+        return self._fw_version
