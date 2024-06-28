@@ -15,9 +15,9 @@ class TempdeckControl:
     InvalidResponse = InvalidResponse
     ResponseTimeout = ResponseTimeout
 
-    USB_HW_IDS = [
+    USB_HW_IDS = {
         (0x04d8, 0xee93),
-        ]
+        }
 
     def __init__(self, ser_port: serial.Serial):
         """
@@ -100,7 +100,7 @@ class TempdeckControl:
     @classmethod
     def list_connected_devices(
             cls, usb_vidpid: Optional[Tuple[int, int]] = None
-            ) -> List[Tuple[str, str]]:
+            ) -> List[Tuple[str, Optional[str]]]:
         """
         Get a list of all Tempdecks currently connected via USB. Detection is
         based on the USB vendor/product ID values reported by the OS. This
@@ -119,10 +119,12 @@ class TempdeckControl:
             connected to. The latter is useful for connecting to a specific
             Tempdeck (see :meth:`from_usb_location`) since they don't expose a
             serial number via USB descriptors.
+            ``location`` may be ``None`` on platforms other than Windows, MacOS
+            or Linux.
         """
         usb_vidpids = (
-            [tuple(usb_vidpid)] if usb_vidpid is not None
-            else cls.USB_HW_IDS
+            {tuple(usb_vidpid)} if usb_vidpid is not None
+            else set(cls.USB_HW_IDS)
             )
         return [
             (info.device, info.location)
@@ -164,7 +166,7 @@ class TempdeckControl:
                     ) from e
         return info, response
 
-    def _populate_device_info(self) -> Dict[str, str]:
+    def _populate_device_info(self):
         info, response = self._ask("M115")
         for key in ['model', 'serial', 'version']:
             if key not in info:
@@ -198,9 +200,13 @@ class TempdeckControl:
 
         :raises ResponseTimeout, InvalidResponse: see class descriptions
         """
-        float_or_none = lambda x: None if x == "none" else float(x)
         info, response = self._ask(
-            "M105", types={'C': float, 'T': float_or_none})
+            "M105",
+            types={
+                'C': float,
+                'T': lambda x: None if x == "none" else float(x)
+                }
+            )
         for key, desc in [('C', "current temp"), ('T', "target temp")]:
             if key not in info:
                 raise self.InvalidResponse(
